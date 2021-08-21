@@ -1,0 +1,15 @@
+{
+  "name": "multiplayer-basketball-theme-game",
+  "version": "1.0.0",
+  "description": "This is for a hackathon",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "priyanshu sharma",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.1",
+    "websocket": "^1.0.34"
+  }
+}
