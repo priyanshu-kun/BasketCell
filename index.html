@@ -20,6 +20,7 @@
                 "method": "create",
                 clientId
             }
+            ws.send(JSON.stringify(payLoad))
         })
 
        
@@ -30,6 +31,10 @@
             if(response.method === "connect") {
                 clientId = response.clientId
                 console.log("client id set successfully: ",clientId)
+            }
+
+            if(response.method === "create") {
+                console.log(response.data)
             }
         }
     </script>

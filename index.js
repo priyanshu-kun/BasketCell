@@ -5,6 +5,7 @@ app.listen(8080,() => {
     console.log("Listening... on 8080!")
 })
 const websocketServer = require("websocket").server 
+const e = require("express")
 const httpServer = http.createServer()
 
 httpServer.listen(9090, () => console.log("Listening... on 9090!"))
@@ -15,6 +16,7 @@ app.get("/",async (req,res) => {
 
 // create a hashmap for the client
 const clients = {}
+const games = {}
 
 const wsServer = new websocketServer({
     "httpServer": httpServer
@@ -27,7 +29,22 @@ wsServer.on("request",request => {
     connection.on("message", message => {
         const result = JSON.parse(message.utf8Data)
         // Here i have reveived a message from the client
-        console.log(result)
+
+        // A user want to create a new game
+        if(result.method === "create") {
+            const clientId = result.clientId
+            const gameId = e1()
+            games[gameId] = {
+                "id": gameId,
+                "balls": 20
+            }
+            const payLoad = {
+                "method": "create",
+                "game": games[gameId]
+            }
+            const con = clients[clientId].connection
+            con.send(JSON.stringify(payLoad))
+        }
     })
 
     const clientId = e1()
