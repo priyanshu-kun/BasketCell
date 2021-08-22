@@ -1,42 +1,267 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Client</title>
-</head>
-<body>
-    <h1>Client </h1>
-    <button id="btnCreate">New Game</button>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      body {
+        padding: 0;
+        margin: 0;
+        font-family: 'Courier New', Courier, monospace;
+        width: 100%;
+        /* background-color: red; */
+        height: 100vh;
+        background: #121212;
+        color: #fff;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
+        padding-top: 10rem;
+      }
+      h1 {
+        text-align: center;
+        font-weight: bold;
+        line-height: 0;
+      }
+      .parent {
+        width: 100%;
+        height: 20vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        /* margin-top: 2rem; */
+        /* position: relative;
+        top: 6rem; */
+      }
+
+      .parent-btn-div {
+        margin-bottom: 1rem;
+      }
+      .parent button {
+        width: 8rem;
+        height: 3rem;
+        /* margin: 0 10px; */
+        /* padding: 10px 30px; */
+        border: none;
+        background-color: rgb(255, 69, 69);
+        border-radius: 3px;
+        cursor: pointer;
+        color: #fff;
+      }
+      input {
+        display: inline-block;
+        width: 16rem;
+        /* padding: 10px 0; */
+        border-radius: 3px;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        padding: 10px;
+      }
+      #connectionIDs {
+        text-align: center;
+        width: 30rem;
+        background: rgba(255, 255, 255, 0.1);
+        margin-top: 1rem;
+        padding: 20px 0;
+        border-radius: 10px;
+      }
+
+      #divBoard {
+     /* background: red; */
+        width: 80%;
+        display: grid;
+        grid-template-columns: repeat(10, 1fr);
+        /* grid-template-rows: repeat(2,1fr); */
+        grid-gap: 3px;
+        margin: 0 auto;
+      }
+
+      #divBoard button {
+        border: none;
+        border-radius: 3px;
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
+        font-size: 2rem;
+      }
+      #divPlayers {
+        margin-top: 1rem;
+      }
+      #divPlayers div {
+        border-radius: 3px;
+        opacity: 0.5;
+        padding: 20px;
+      }
+      #counter {
+        background: #fff;
+        padding: 20px;
+        margin: 10px 0;
+        border-radius: 3px;
+        color: #000;
+      }
+    </style>
+    <title>BasketCell</title>
+  </head>
+  <body>
+    <div class="parent">
+      <h1>BasketCell</h1>
+      <div id="counter">0:60</div>
+      <div class="parent-btn-div">
+        <button id="btnCreate">New Game</button>
+        <button id="btnJoin">Join Game</button>
+      </div>
+      <input type="text" id="txtGameId" placeholder="Enter game code..." />
+      <div id="connectionIDs">Your sharable id will <br />apper here...</div>
+      <small>Users</small>
+      <div id="divPlayers"></div>
+    </div>
+    <div id="divBoard"></div>
+
     <script>
-        const btnCreateGame = btnCreate;
+      //HTML elements
+      let clientId = null;
+      let gameId = null;
+      let playerColor = null;
 
-        let clientId = null
-        let ws = new WebSocket("ws://localhost:9090")
+      let ws = new WebSocket('ws://localhost:9090');
+      const btnCreate = document.getElementById('btnCreate');
+      const btnJoin = document.getElementById('btnJoin');
+      const txtGameId = document.getElementById('txtGameId');
+      const divPlayers = document.getElementById('divPlayers');
+      const divBoard = document.getElementById('divBoard');
+      const connectionIDs = document.getElementById('connectionIDs');
 
-        btnCreateGame.addEventListener("click",(e) => {
-            const payLoad = {
-                "method": "create",
-                clientId
+      function countdown(minutes) {
+        let seconds = 60;
+        var mins = minutes;
+        function tick() {
+          let counter = document.getElementById('counter');
+          let current_minutes = mins - 1;
+          seconds--;
+          counter.innerHTML =
+            current_minutes.toString() +
+            ':' +
+            (seconds < 10 ? '0' : '') +
+            String(seconds);
+          if (seconds > 0) {
+            setTimeout(tick, 1000);
+          } else {
+              const payLoad = {
+                  "method": "gameover",
+                  clientId
+              }
+              console.log("BOOM")
+              ws.send(JSON.stringify(payLoad))
+            if (mins > 1) {
+              countdown(mins - 1);
             }
-            ws.send(JSON.stringify(payLoad))
-        })
-
-       
-        ws.onmessage = message => {
-            // message.data is the string that we want
-            const response = JSON.parse(message.data)
-            console.log(response)
-            if(response.method === "connect") {
-                clientId = response.clientId
-                console.log("client id set successfully: ",clientId)
-            }
-
-            if(response.method === "create") {
-                console.log(response.data)
-            }
+          }
         }
+        tick();
+      }
+      //wiring events
+      btnJoin.addEventListener('click', (e) => {
+        if (gameId === null) gameId = txtGameId.value;
+
+        const payLoad = {
+          method: 'join',
+          clientId: clientId,
+          gameId: gameId,
+        };
+
+        ws.send(JSON.stringify(payLoad));
+      });
+
+      btnCreate.addEventListener('click', (e) => {
+        const payLoad = {
+          method: 'create',
+          clientId: clientId,
+        };
+
+        ws.send(JSON.stringify(payLoad));
+      });
+
+      ws.onmessage = (message) => {
+        //message.data
+        const response = JSON.parse(message.data);
+        //connect
+        if (response.method === 'connect') {
+          clientId = response.clientId;
+          console.log('Client id Set successfully ' + clientId);
+        }
+
+        //create
+        if (response.method === 'create') {
+          gameId = response.game.id;
+          connectionIDs.innerHTML = `
+            <div>
+                <small>go to this link.</small>
+                <br />
+            <b>http://localhost:9091</b>
+            </div>
+            <div>
+                <small>share this id to your friend</small>
+                <br />
+            <b>${gameId}</b>
+            </div>
+          `;
+        }
+
+        //update
+        if (response.method === 'update') {
+          //{1: "red", 1}
+          if (!response.game.state) return;
+          for (const b of Object.keys(response.game.state)) {
+            const color = response.game.state[b];
+            const ballObject = document.getElementById('ball' + b);
+            ballObject.style.backgroundColor = color;
+          }
+        }
+
+        //join
+        if (response.method === 'join') {
+          const game = response.game;
+          countdown(1); 
+
+          while (divPlayers.firstChild)
+            divPlayers.removeChild(divPlayers.firstChild);
+
+          game.clients.forEach((c) => {
+            const d = document.createElement('div');
+            // d.style.width = '200px';
+            d.style.background = c.color;
+            d.innerHTML = `
+                ${c.clientId}
+            `;
+            divPlayers.appendChild(d);
+
+            if (c.clientId === clientId) playerColor = c.color;
+          });
+
+          while (divBoard.firstChild) divBoard.removeChild(divBoard.firstChild);
+
+          for (let i = 0; i < game.balls; i++) {
+            const b = document.createElement('button');
+            b.id = 'ball' + (i + 1);
+            b.tag = i + 1;
+            b.textContent = i + 1;
+            b.style.width = '150px';
+            b.style.height = '150px';
+            b.addEventListener('click', (e) => {
+              b.style.background = playerColor;
+              const payLoad = {
+                method: 'play',
+                clientId: clientId,
+                gameId: gameId,
+                ballId: b.tag,
+                color: playerColor,
+              };
+              ws.send(JSON.stringify(payLoad));
+            });
+            divBoard.appendChild(b);
+          }
+        }
+      };
     </script>
-</body>
+  </body>
 </html>
